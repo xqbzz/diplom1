@@ -3,7 +3,13 @@ sys.setrecursionlimit(5000)
 from PyQt5.QtWidgets import QApplication
 from gui import ImageGeneratorApp
 import os
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = r'C:\Users\Сергей\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyQt5\Qt5\plugins'
+import PyQt5
+
+# Получаем папку, где установлен PyQt5
+pyqt_path = os.path.dirname(PyQt5.__file__)
+plugin_path = os.path.join(pyqt_path, "Qt5", "plugins")
+
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 
 def main():
     app = QApplication(sys.argv)
