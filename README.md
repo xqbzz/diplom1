@@ -43,7 +43,7 @@ pip install -r requirements.txt
 ## 🖥️ Запуск
 
 ```bash
-python gui.py
+python main.py
 ```
 
 ---
