@@ -21,7 +21,7 @@ class ImageGenerator:
             except Exception as e:
                 raise RuntimeError(f"❌ Ошибка загрузки tokenizer: {e}")
 
-    def generate_image(self, prompt, style, size, num_inference_steps=50):
+    def generate_image(self, prompt, style, size, num_inference_steps=50, progress_callback=None):
         """Генерация изображения на основе текста, стиля и размера"""
         if not prompt:
             raise ValueError("Описание не может быть пустым.")
@@ -46,16 +46,24 @@ class ImageGenerator:
 
         # Генерация изображения
         try:
-            result = self.model(
-                prompt=prompt,
-                height=height,
-                width=width,
-                num_inference_steps=num_inference_steps,
-                guidance_scale=7.5  # стандартная настройка качества
-            )
+            pipe_args = {
+                "prompt": prompt,
+                "height": height,
+                "width": width,
+                "num_inference_steps": num_inference_steps,
+                "guidance_scale": 7.5,
+            }
+
+            if progress_callback:
+                pipe_args["callback_on_step_end"] = progress_callback
+
+            print(f"[DEBUG] Запуск генерации: {pipe_args}")
+            result = self.model(**pipe_args)
             return result.images[0]
+
         except Exception as e:
             raise RuntimeError(f"Ошибка при генерации изображения: {e}")
+
 
     def save_image(self, image, path):
         """Сохранение изображения в файл"""

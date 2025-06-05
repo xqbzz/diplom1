@@ -6,6 +6,7 @@ from config import AVAILABLE_STYLES, AVAILABLE_SIZES
 from logger import setup_logger
 from time import time
 from downloader import ModelDownloader  # Импортируем класс для загрузки модели
+from time import time, strftime, gmtime
 
 logger = setup_logger()
 
@@ -23,15 +24,62 @@ class GenerationThread(QThread):
         self.prompt = prompt
         self.style = style
         self.size = size
-        self.steps = steps
+
+        try:
+            self.steps = int(steps)
+        except Exception:
+            print("[WARNING] steps не число")
+            self.steps = 50
+
+    def emit_progress(self, pipe, step: int, timestep: int, callback_kwargs: dict):
+        try:
+            if not isinstance(self.steps, int) or self.steps <= 0:
+                self.progress.emit(0)
+                return callback_kwargs
+
+            percent = int((step + 1) * 100 / self.steps)
+            self.progress.emit(percent)
+
+            if not hasattr(self, 'start_time'):
+                self.start_time = time()
+
+            elapsed_seconds = time() - self.start_time
+            elapsed_str = strftime('%M:%S', gmtime(elapsed_seconds))
+
+            # Оценка оставшегося времени
+            estimated_total = elapsed_seconds / (step + 1) * self.steps
+            remaining_seconds = max(0, estimated_total - elapsed_seconds)
+            remaining_str = strftime('%M:%S', gmtime(remaining_seconds))
+
+            # Обновление строки статуса
+            self.time_update.emit(f"{percent}% из 100% — Прошло: {elapsed_str} — Осталось: {remaining_str}")
+
+        except Exception as e:
+            self.error.emit(f"Ошибка в emit_progress: {e}")
+
+        return callback_kwargs
+
+
 
     def run(self):
         try:
-            start_time = time()
-            img = self.generator.generate_image(self.prompt, self.style, self.size, self.steps)
-            end_time = time()
-            elapsed = end_time - start_time
+            if not isinstance(self.steps, int):
+                print(f"[ERROR] self.steps имеет тип {type(self.steps)} и значение {self.steps}")
+                self.error.emit("Количество итераций задано неверно.")
+                return
+            #print(f"[GENERATION PARAMS] prompt={self.prompt}, steps={self.steps}, type(steps)={type(self.steps)}")
+
+            self.start_time = time()
+            img = self.generator.generate_image(
+                prompt=self.prompt,
+                style=self.style,
+                size=self.size,
+                num_inference_steps=self.steps,
+                progress_callback=self.emit_progress
+        )
+            elapsed = time() - self.start_time
             self.finished.emit(img, elapsed)
+
         except Exception as e:
             self.error.emit(str(e))
 
@@ -229,13 +277,13 @@ class ImageGeneratorApp(QtWidgets.QMainWindow):
             self.status_label.setText("Статус: Пожалуйста, введите описание.")
             return
 
-        self.status_label.setText(f"Статус: Генерация изображения ({iterations} итераций)...")
+  
     
         self.gen_thread = GenerationThread(self.generator, prompt, style, size, iterations)
         self.gen_thread.finished.connect(self.on_generation_finished)
         self.gen_thread.error.connect(self.on_generation_error)
-        self.gen_thread.progress.connect(self.update_progress)  # новый слот для прогресса
-        self.gen_thread.time_update.connect(self.update_time)  # новый слот для времени
+        self.gen_thread.progress.connect(self.update_progress)
+        self.gen_thread.time_update.connect(self.update_time)
         self.gen_thread.start()
 
     def on_generation_finished(self, image, elapsed):
@@ -251,12 +299,13 @@ class ImageGeneratorApp(QtWidgets.QMainWindow):
     
     def update_progress(self, value):
         self.progress_bar.setValue(value)
+        self.status_label.setText(f"Статус: Генерация... ({value}% из {self.iterations_dropdown.currentText()})")
 
     def update_time(self, time_str):
         # Обновляем статус с прогрессом и временем
-        current_text = self.status_label.text()
+        current_text = self.status_label.text().split(" — ")[0]
         # Можно просто показывать время отдельно или вместе со статусом
-        self.status_label.setText(f"Статус: Генерация... {time_str}")
+        self.status_label.setText(f"{current_text} — Прошло: {time_str}")
 
     def display_image(self, image_path):
         pixmap = QtGui.QPixmap(image_path)

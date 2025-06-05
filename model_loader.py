@@ -60,6 +60,7 @@ def load_model(model_path):
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         pipe = pipe.to(device)
+        pipe.set_progress_bar_config(disable=True)
         print(f"✅ Используется устройство: {device.upper()}")
         print(f"✅ Модель загружена: {model_path}")
         print(f"DEBUG: is_xl={is_xl}")
