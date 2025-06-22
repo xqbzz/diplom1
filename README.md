@@ -33,8 +33,8 @@
 ## 📦 Установка
 
 ```bash
-git clone https://github.com/yourusername/ai-image-generator-gui.git
-cd ai-image-generator-gui
+git clone https://github.com/xqbzz/diplom1
+cd diplom1
 pip install -r requirements.txt
 ```
 
@@ -63,7 +63,7 @@ python main.py
 
 Для генерации изображений необходимо загрузить предварительно обученную модель.
 
-🔗 **Скачать мою модель на SDXL**: [Скачать с Google Диска](https://drive.google.com/uc?id=ВАШ_ID_ФАЙЛА&export=download)
+🔗 **Скачать мою модель на SDXL**: [Скачать с Google Диска](https://drive.google.com/file/d/17PfBCtftwBa0NdEljS58FG5Uv_4Q7fys/view?usp=drive_link)
 Ссылка для скачивания Google Colab: https://colab.research.google.com/drive/1LLTJ8uv4ksbu853qtFQvjqEyb1phitKq?usp=drive_link
 
 > ⚠️ **Обратите внимание:**  
